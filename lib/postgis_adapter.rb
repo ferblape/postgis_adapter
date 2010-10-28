@@ -232,7 +232,7 @@ ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.class_eval do
   end
 
   def columns(table_name, name = nil) #:nodoc:
-    raw_geom_infos = column_spatial_info(table_name)
+    raw_geom_infos = column_spatial_info[table_name]
 
     column_definitions(table_name).collect do |name, type, default, notnull|
       if type =~ /geometry/i
@@ -263,34 +263,33 @@ ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.class_eval do
 
   private
 
-  def column_spatial_info(table_name)
-    constr = query <<-end_sql
-SELECT * FROM geometry_columns WHERE f_table_name = '#{table_name}'
-    end_sql
-
+  def column_spatial_info
+    return @column_spatial_info if @column_spatial_info
+    constr = query("SELECT * FROM geometry_columns")
     raw_geom_infos = {}
     constr.each do |constr_def_a|
-      raw_geom_infos[constr_def_a[3]] ||= ActiveRecord::ConnectionAdapters::RawGeomInfo.new
-      raw_geom_infos[constr_def_a[3]].type = constr_def_a[6]
-      raw_geom_infos[constr_def_a[3]].dimension = constr_def_a[4].to_i
-      raw_geom_infos[constr_def_a[3]].srid = constr_def_a[5].to_i
+      raw_geom_infos[constr_def_a[2]] ||= {}
+      raw_geom_infos[constr_def_a[2]][constr_def_a[3]] ||= ActiveRecord::ConnectionAdapters::RawGeomInfo.new
+      raw_geom_infos[constr_def_a[2]][constr_def_a[3]].type = constr_def_a[6]
+      raw_geom_infos[constr_def_a[2]][constr_def_a[3]].dimension = constr_def_a[4].to_i
+      raw_geom_infos[constr_def_a[2]][constr_def_a[3]].srid = constr_def_a[5].to_i
 
-      if raw_geom_infos[constr_def_a[3]].type[-1] == ?M
-        raw_geom_infos[constr_def_a[3]].with_m = true
-        raw_geom_infos[constr_def_a[3]].type.chop!
+      if raw_geom_infos[constr_def_a[2]][constr_def_a[3]].type[-1] == ?M
+        raw_geom_infos[constr_def_a[2]][constr_def_a[3]].with_m = true
+        raw_geom_infos[constr_def_a[2]][constr_def_a[3]].type.chop!
       else
-        raw_geom_infos[constr_def_a[3]].with_m = false
+        raw_geom_infos[constr_def_a[2]][constr_def_a[3]].with_m = false
       end
     end
 
-    raw_geom_infos.each_value do |raw_geom_info|
-      #check the presence of z and m
-      raw_geom_info.convert!
+    raw_geom_infos.keys.each do |table_name|
+      raw_geom_infos[table_name].each_value do |raw_geom_info|
+        #check the presence of z and m
+        raw_geom_info.convert!
+      end
     end
-
-    raw_geom_infos
-  rescue => e
-    nil
+    @column_spatial_info = raw_geom_infos
+    return @column_spatial_info
   end
 
 end

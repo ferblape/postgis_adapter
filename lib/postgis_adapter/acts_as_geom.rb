@@ -23,6 +23,7 @@ module PostgisFunctions
       send :include, case geom[0].values[0]
         when :point       then  PointFunctions
         when :polygon     then PolygonFunctions
+        when :multi_point then MultiPointFunctions
         when :line_string, :multi_line_string then  LineStringFunctions
         when :multi_polygon then MultiPolygonFunctions
       end unless geom[0].kind_of? Symbol

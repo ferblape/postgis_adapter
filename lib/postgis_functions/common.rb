@@ -9,7 +9,7 @@
 module PostgisFunctions
 
   #
-  # Test if a geometry is well formed. 
+  # Test if a geometry is well formed.
   #
   def valid_geom?
     postgis_calculate(:isvalid, self)
@@ -530,8 +530,8 @@ module PostgisFunctions
   def point_on_surface
     postgis_calculate(:pointonsurface, self)
   end
-  
-  
+
+
   #
   #
   # LINESTRING
@@ -892,7 +892,7 @@ module PostgisFunctions
     end
 
   end
-  
+
   #
   #
   #
@@ -903,6 +903,9 @@ module PostgisFunctions
   #
   #
   module MultiPolygonFunctions
+  end
+
+  module MultiPointFunctions
   end
 
 end
